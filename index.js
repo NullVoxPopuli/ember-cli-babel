@@ -3,7 +3,6 @@
 const {
   _shouldCompileModules,
   _shouldIncludeHelpers,
-  _shouldHandleTypeScript,
   _getExtensions,
   _parentName,
   _shouldHighlightCode,
@@ -58,34 +57,7 @@ module.exports = {
 
     let config = _config || this._getAddonOptions();
 
-    const customAddonConfig = config['ember-cli-babel'];
-    const shouldUseBabelConfigFile = customAddonConfig && customAddonConfig.useBabelConfig;
-
-    let options;
-
-    if (shouldUseBabelConfigFile) {
-      let babelConfig = babel.loadPartialConfig({
-        root: this.parent.root,
-        rootMode: 'root',
-        envName: process.env.EMBER_ENV || process.env.BABEL_ENV || process.env.NODE_ENV || "development",
-      });
-
-      if (babelConfig.config === undefined) {
-        // should contain the file that we used for the config,
-        // if it is undefined then we didn't find any config and
-        // should error
-
-        throw new Error(
-          "Missing babel config file in the project root. Please double check if the babel config file exists or turn off the `useBabelConfig` option in your ember-cli-build.js file."
-        );
-      }
-
-      // If the babel config file is found, then pass the path into the options for the transpiler
-      // parse and leverage the same.
-      options = { configFile: babelConfig.config };
-    } else {
-      options = getBabelOptions(config, this);
-    }
+    let options = getBabelOptions(config, this);
 
     if (resultType === 'babel') {
       return options;
@@ -160,11 +132,9 @@ module.exports = {
       let BabelTranspiler = require('broccoli-babel-transpiler');
       let transpilationInput = postDebugTree;
 
-      if (_shouldHandleTypeScript(config, this.parent, this.project)) {
-        let Funnel = require('broccoli-funnel');
-        let inputWithoutDeclarations = new Funnel(transpilationInput, { exclude: ['**/*.d.ts'] });
-        transpilationInput = this._debugTree(inputWithoutDeclarations, `${description}:filtered-input`);
-      }
+      let Funnel = require('broccoli-funnel');
+      let inputWithoutDeclarations = new Funnel(transpilationInput, { exclude: ['**/*.d.ts'] });
+      transpilationInput = this._debugTree(inputWithoutDeclarations, `${description}:filtered-input`);
 
       output = new BabelTranspiler(transpilationInput, options);
     }
